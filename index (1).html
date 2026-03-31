@@ -1,0 +1,771 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Verona Experience</title>
+
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+
+<style>
+html {scroll-behavior:smooth;}
+body {margin:0;font-family:'Inter',sans-serif;background:#111;color:white;}
+
+/* NAVBAR */
+nav {
+  position:fixed;width:100%;padding:15px 5%;
+  backdrop-filter:blur(10px);
+  background:rgba(0,0,0,0.6);
+  z-index:1000;
+  display:flex;justify-content:space-between;align-items:center;
+}
+.nav-left {
+  display:flex;align-items:center;gap:10px;
+}
+.nav-logo-img {
+  width:32px;height:32px;border-radius:50%;object-fit:cover;
+}
+.nav-title {font-weight:700;letter-spacing:2px;}
+nav a {color:white;text-decoration:none;margin:0 10px;font-weight:500;transition:0.3s;font-size:0.95rem;}
+nav a:hover {color:#A32638;}
+.lang-switch {display:flex;gap:8px;font-size:0.8rem;}
+.lang-switch button {
+  background:transparent;border:1px solid #555;color:#ddd;
+  padding:3px 8px;border-radius:12px;cursor:pointer;
+}
+.lang-switch button.active {background:#A32638;border-color:#A32638;color:white;}
+
+/* VIDEO HERO */
+.video-hero {
+  position:relative;height:100vh;overflow:hidden;
+}
+.bg-video {position:absolute;top:50%;left:50%;min-width:100%;min-height:100%;transform:translate(-50%,-50%);object-fit:cover;}
+.video-overlay {position:absolute;inset:0;background:linear-gradient(to bottom, rgba(0,0,0,0.4), rgba(0,0,0,0.9));}
+.hero-content {
+  position:relative;z-index:2;height:100%;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;
+}
+.hero-content h1 {font-size:6rem;margin:0;}
+.hero-content p {font-size:1.5rem;margin-top:10px;}
+.hero-content button {margin-top:20px;padding:15px 30px;background:#A32638;color:white;border:none;border-radius:30px;cursor:pointer;}
+.hero-content button:hover {transform:scale(1.05);}
+
+/* SECTIONS */
+.section {padding:100px 10%;color:#111;background:#fff;}
+.section h2 {text-align:center;margin-bottom:40px;font-size:3rem;}
+
+/* GRID */
+.grid {display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:30px;}
+.card {background:white;padding:20px;border-radius:20px;color:#111;transition:0.3s;}
+.card img {width:100%;height:180px;object-fit:cover;border-radius:15px;margin-bottom:15px;}
+.card:hover {transform:translateY(-5px);box-shadow:0 10px 30px rgba(0,0,0,0.2);}
+
+/* FEEL VERONA VIDEO */
+.immersive {
+  position:relative;
+  height:120vh;
+  overflow:hidden;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  text-align:center;
+  color:white;
+}
+.immersive video {
+  position:absolute;
+  top:50%;left:50%;
+  min-width:100%;min-height:100%;
+  transform:translate(-50%,-50%);
+  object-fit:cover;
+  z-index:0;
+}
+.immersive .overlay {
+  position:absolute;inset:0;
+  background:linear-gradient(to bottom, rgba(0,0,0,0.3), rgba(0,0,0,0.7));
+  z-index:1;
+}
+.immersive h2 {
+  position:relative;
+  z-index:2;
+  font-size:4rem;
+}
+
+/* ABOUT VERONA */
+.about {background:#f4f4f4;color:#111;}
+.about p {
+  max-width:800px;margin:20px auto;
+}
+
+/* GALLERY */
+.gallery-controls {
+  text-align:center;margin-bottom:20px;
+}
+.gallery-controls button {
+  background:#eee;border:none;padding:8px 16px;margin:0 5px;border-radius:20px;cursor:pointer;font-size:0.9rem;
+}
+.gallery-controls button.active {background:#A32638;color:white;}
+.gallery {display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:15px;}
+.gallery img {width:100%;height:200px;object-fit:cover;border-radius:15px;cursor:pointer;transition:0.3s;}
+.gallery img:hover{transform:scale(1.05);}
+
+/* LIGHTBOX */
+#lightbox {position:fixed;width:100%;height:100%;background:rgba(0,0,0,0.9);display:none;align-items:center;justify-content:center;z-index:9999;}
+#lightbox img {max-width:90%;max-height:90%;}
+
+/* MAP */
+#map {height:500px;border-radius:20px;}
+
+/* CTA / CONTACT SECTION */
+.cta {
+  background:#111;
+  color:white;
+  padding:80px 10%;
+}
+.cta h2 {
+  text-align:center;
+  margin-bottom:40px;
+  font-size:2.5rem;
+}
+.cta-grid {
+  max-width:900px;
+  margin:0 auto;
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:40px;
+}
+.cta-info p {margin:8px 0;}
+.cta-form input,
+.cta-form textarea {
+  width:100%;
+  padding:12px;
+  margin-bottom:15px;
+  border-radius:8px;
+  border:none;
+}
+.cta-form button {
+  background:#A32638;
+  color:white;
+  padding:15px 30px;
+  border:none;
+  border-radius:30px;
+  cursor:pointer;
+}
+.cta-form button:hover {transform:scale(1.05);}
+
+/* FOOTER */
+footer {
+  background:#000;
+  color:#ccc;
+  padding:30px 10% 20px 10%;
+  font-size:0.9rem;
+}
+.footer-top {
+  display:flex;
+  justify-content:space-between;
+  align-items:flex-start;
+  flex-wrap:wrap;
+  gap:20px;
+  border-bottom:1px solid #333;
+  padding-bottom:15px;
+  margin-bottom:15px;
+}
+.footer-brand {
+  display:flex;
+  align-items:center;
+  gap:10px;
+}
+.footer-brand-logo-img {
+  width:40px;
+  height:40px;
+  border-radius:50%;
+  object-fit:cover;
+}
+.footer-columns {
+  display:flex;
+  gap:40px;
+  flex-wrap:wrap;
+}
+.footer-column h4 {margin:0 0 8px 0;color:#fff;}
+.footer-column a {
+  display:block;
+  color:#ccc;
+  text-decoration:none;
+  margin:3px 0;
+  font-size:0.85rem;
+}
+.footer-column a:hover {color:#fff;}
+.footer-bottom {
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  flex-wrap:wrap;
+  gap:10px;
+}
+.footer-logos {
+  display:flex;
+  gap:10px;
+  align-items:center;
+}
+.footer-logos img {
+  height:30px;
+  object-fit:contain;
+}
+
+/* COOKIE BANNER */
+#cookie-banner {
+  position:fixed;
+  bottom:0;left:0;right:0;
+  background:rgba(0,0,0,0.95);
+  color:#eee;
+  padding:15px 10%;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:15px;
+  font-size:0.85rem;
+  z-index:2000;
+}
+#cookie-banner button {
+  background:#A32638;
+  color:white;
+  border:none;
+  padding:8px 16px;
+  border-radius:20px;
+  cursor:pointer;
+}
+
+/* REVEAL ANIMATIONS */
+.reveal {
+  opacity:0;
+  transform:translateY(20px);
+  transition:opacity 0.7s ease, transform 0.7s ease;
+}
+.reveal.visible {
+  opacity:1;
+  transform:translateY(0);
+}
+
+/* RESPONSIVE */
+@media (max-width:900px){
+  .hero-content h1 {font-size:3.5rem;}
+  .hero-content p {font-size:1.1rem;}
+  .cta-grid {grid-template-columns:1fr;}
+  .footer-top {flex-direction:column;}
+  .footer-bottom {flex-direction:column;align-items:flex-start;}
+  nav {flex-direction:column;align-items:flex-start;gap:10px;}
+}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-left">
+    <img src="letöltés (1).png" alt="Verona logo" class="nav-logo-img">
+    <div class="nav-title">VERONA EXPERIENCE</div>
+  </div>
+  <div>
+    <a href="#hero" data-i18n="nav_home">Home</a>
+    <a href="#experiences" data-i18n="nav_experiences">Experiences</a>
+    <a href="#feel" data-i18n="nav_feel">Feel Verona</a>
+    <a href="#about" data-i18n="nav_about">About</a>
+    <a href="#gallery" data-i18n="nav_gallery">Gallery</a>
+    <a href="#map-section" data-i18n="nav_map">Map</a>
+    <a href="#cta" data-i18n="nav_plan">Plan Trip</a>
+  </div>
+  <div class="lang-switch">
+    <button data-lang="hu" class="active">HU</button>
+    <button data-lang="en">EN</button>
+    <button data-lang="it">IT</button>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section id="hero" class="video-hero">
+  <video autoplay muted loop playsinline class="bg-video">
+    <source src="https://cdn.coverr.co/videos/coverr-aerial-view-of-verona-italy-5173/1080p.mp4" type="video/mp4">
+  </video>
+  <div class="video-overlay"></div>
+  <div class="hero-content reveal">
+    <h1 data-i18n="hero_title">VERONA</h1>
+    <p data-i18n="hero_subtitle">Where stories come alive</p>
+    <button onclick="scrollToContent()" data-i18n="hero_button">Explore</button>
+  </div>
+</section>
+
+<!-- EXPERIENCES -->
+<section id="experiences" class="section reveal">
+<h2 data-i18n="exp_title">Discover Verona</h2>
+<div class="grid">
+  <div class="card">
+    <img src="https://images.unsplash.com/photo-1555993539-1732b0258235?q=80&w=800">
+    <h3 data-i18n="exp_arena_title">Arena</h3>
+    <p data-i18n="exp_arena_text">Ancient Roman amphitheatre hosting opera performances.</p>
+  </div>
+  <div class="card">
+    <img src="https://images.unsplash.com/photo-1582555172866-f73bb12a2ab3?q=80&w=800">
+    <h3 data-i18n="exp_juliet_title">Juliet’s House</h3>
+    <p data-i18n="exp_juliet_text">Icon of romance and Shakespearean history.</p>
+  </div>
+  <div class="card">
+    <img src="https://images.unsplash.com/photo-1600891964599-f61ba0e24092?q=80&w=800">
+    <h3 data-i18n="exp_food_title">Food</h3>
+    <p data-i18n="exp_food_text">Authentic Italian cuisine and wine experiences.</p>
+  </div>
+  <div class="card">
+    <img src="https://images.unsplash.com/photo-1501281668745-f7f57925c3b4?q=80&w=800">
+    <h3 data-i18n="exp_events_title">Events</h3>
+    <p data-i18n="exp_events_text">Festivals, markets, and cultural highlights year-round.</p>
+  </div>
+</div>
+</section>
+
+<!-- FEEL VERONA VIDEO -->
+<section id="feel" class="immersive reveal">
+  <video autoplay muted playsinline>
+    <source src="10130242-uhd_3840_2160_30fps.mp4" type="video/mp4">
+  </video>
+  <div class="overlay"></div>
+  <h2 data-i18n="feel_title">Feel Verona</h2>
+</section>
+
+<!-- ABOUT – Modern Card Layout -->
+<section id="about" class="section about-modern reveal">
+  <h2 data-i18n="about_title">Veronáról</h2>
+
+  <div class="about-grid">
+
+    <div class="about-card">
+      <div class="about-icon">🏛️</div>
+      <h3 data-i18n="about_card1_title">A művészet és történelem városa</h3>
+      <p data-i18n="about_card1_text">
+        Verona Észak-Olaszország egyik legjelentősebb kulturális központja, ahol az ókori római örökség,
+        a középkori városkép és a reneszánsz építészet harmonikusan találkozik. A város teljes történelmi
+        központja UNESCO világörökségi védelem alatt áll.
+      </p>
+    </div>
+
+    <div class="about-card">
+      <div class="about-icon">🎭</div>
+      <h3 data-i18n="about_card2_title">Az Aréna és a kulturális élet</h3>
+      <p data-i18n="about_card2_text">
+        Az Aréna di Verona a világ egyik legjobb állapotban fennmaradt római amfiteátruma, amely ma is
+        világszínvonalú operaelőadásoknak, koncerteknek és fesztiváloknak ad otthont. A nyári szezon
+        különleges atmoszférát teremt a városban.
+      </p>
+    </div>
+
+    <div class="about-card">
+      <div class="about-icon">❤️</div>
+      <h3 data-i18n="about_card3_title">A szerelem ikonikus helyszíne</h3>
+      <p data-i18n="about_card3_text">
+        Júlia háza, Shakespeare örök klasszikusának szimbóluma, évente több millió látogatót vonz.
+        A romantikus udvar, a híres erkély és a szerelmesek falai a világ egyik legismertebb
+        romantikus úti céljává teszik Veronát.
+      </p>
+    </div>
+
+  </div>
+</section>
+
+
+
+<!-- GALLERY -->
+<section id="gallery" class="section reveal">
+  <h2 data-i18n="gallery_title">Gallery</h2>
+  <div class="gallery-controls">
+    <button class="active" data-filter="all" data-i18n="gallery_all">All</button>
+    <button data-filter="landmark" data-i18n="gallery_landmarks">Landmarks</button>
+    <button data-filter="food" data-i18n="gallery_food">Food</button>
+  </div>
+  <div class="gallery">
+    <img src="https://images.unsplash.com/photo-1600891964599-f61ba0e24092?q=80&w=800" data-category="food" onclick="openImg(this)">
+    <img 
+  src="https://images.unsplash.com/photo-1502602898657-3e91760cbb34?q=80&w=800" 
+  data-category="landmark" 
+  onclick="openImg(this)" 
+  alt="Verona landmark">
+
+    <img src="https://images.unsplash.com/photo-1558618666-fcd25c85cd64?q=80&w=800" data-category="landmark" onclick="openImg(this)">
+    <img src="https://images.unsplash.com/photo-1567696153798-9111f9cd3d0d?q=80&w=800" data-category="landmark" onclick="openImg(this)">
+  </div>
+</section>
+
+<!-- LIGHTBOX -->
+<div id="lightbox" onclick="closeImg()">
+  <img id="lightbox-img">
+</div>
+
+<!-- MAP -->
+<section id="map-section" class="section reveal">
+  <h2 data-i18n="map_title">Map</h2>
+  <p style="text-align:center;margin-bottom:20px;" data-i18n="map_routes_info">
+    Explore different themed routes in Verona: Romantic Walk, Historical Route, and Food & Wine Tour.
+  </p>
+  <div id="map"></div>
+</section>
+
+<!-- CTA – Contact & Info Section -->
+<section id="cta" class="cta reveal">
+  <h2 data-i18n="cta_title">Plan Your Trip</h2>
+
+  <div class="cta-grid">
+
+    <!-- LEFT SIDE – INFO -->
+    <div class="cta-info">
+      <h3 data-i18n="cta_contact_title">Contact Information</h3>
+      <p>📍 <strong data-i18n="cta_address_label">Address:</strong><br> Via Roma 12, Verona, Italy</p>
+      <p>☎ <strong data-i18n="cta_phone_label">Phone:</strong><br> +39 045 123 4567</p>
+      <p>✉ <strong data-i18n="cta_email_label">Email:</strong><br> info@veronaexperience.com</p>
+
+      <h3 style="margin-top:30px;" data-i18n="cta_hours_title">Opening Hours</h3>
+      <p data-i18n="cta_hours_1">Monday – Friday: 09:00 – 18:00</p>
+      <p data-i18n="cta_hours_2">Saturday: 10:00 – 16:00</p>
+      <p data-i18n="cta_hours_3">Sunday: Closed</p>
+    </div>
+
+    <!-- RIGHT SIDE – EMAIL FORM -->
+    <div class="cta-form">
+      <h3 data-i18n="cta_form_title">Send us a message</h3>
+      <form action="contact.php" method="POST">
+        <label data-i18n="cta_form_name">Name:</label><br>
+        <input type="text" name="name" required>
+
+        <label data-i18n="cta_form_email">Email:</label><br>
+        <input type="email" name="email" required>
+
+        <label data-i18n="cta_form_message">Message:</label><br>
+        <textarea name="message" rows="5" required></textarea>
+
+        <button type="submit" data-i18n="cta_form_button">Send Email</button>
+      </form>
+    </div>
+
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-top">
+    <div class="footer-brand">
+      <img src="letöltés (1).png" alt="Verona logo" class="footer-brand-logo-img">
+      <div>
+        <strong>VERONA EXPERIENCE</strong><br>
+        <span data-i18n="footer_official">Official city experience page</span>
+      </div>
+    </div>
+    <div class="footer-columns">
+      <div class="footer-column">
+        <h4 data-i18n="footer_info_title">Information</h4>
+        <a href="cookies.html" data-i18n="footer_cookies">Sütikezelés</a>
+        <a href="privacy.html" data-i18n="footer_privacy">Adatkezelés</a>
+        <a href="downtime.html" data-i18n="footer_downtime">Üzemszünet</a>
+        <a href="accessibility.html" data-i18n="footer_accessibility">Akadálymentesítés</a>
+      </div>
+      <div class="footer-column">
+        <h4 data-i18n="footer_contact_title">Contact</h4>
+        <a href="#cta">Via Roma 12, Verona</a>
+        <a href="tel:+390451234567">+39 045 123 4567</a>
+        <a href="mailto:info@veronaexperience.com">info@veronaexperience.com</a>
+      </div>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    <div>© 2026 Verona City. <span data-i18n="footer_rights">All rights reserved.</span></div>
+    <div class="footer-logos">
+      <img src="letöltés.png" alt="EU logo">
+      <img src="11.jpg" alt="Government logo">
+      <img src="df.jpg" alt="Project logo">
+    </div>
+  </div>
+</footer>
+
+<!-- COOKIE BANNER -->
+<div id="cookie-banner" style="display:none;">
+  <div data-i18n="cookie_text">This site uses cookies to improve your experience.</div>
+  <button id="cookie-accept" data-i18n="cookie_button">Accept</button>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+function scrollToContent(){
+  window.scrollTo({top:window.innerHeight,behavior:"smooth"});
+}
+
+/* LIGHTBOX */
+function openImg(img){
+  document.getElementById("lightbox").style.display="flex";
+  document.getElementById("lightbox-img").src=img.src;
+}
+function closeImg(){
+  document.getElementById("lightbox").style.display="none";
+}
+
+/* GALLERY FILTER */
+const galleryButtons = document.querySelectorAll('.gallery-controls button');
+const galleryImages = document.querySelectorAll('.gallery img');
+galleryButtons.forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    galleryButtons.forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    const filter = btn.getAttribute('data-filter');
+    galleryImages.forEach(img=>{
+      const cat = img.getAttribute('data-category');
+      img.style.display = (filter==='all' || filter===cat) ? 'block' : 'none';
+    });
+  });
+});
+
+/* MAP – multiple routes */
+const map = L.map('map').setView([45.4384,10.9916],13);
+L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+  attribution: '&copy; OpenStreetMap contributors'
+}).addTo(map);
+
+const places = {
+  arena:        {name:'Arena di Verona', coords:[45.4389,10.9943]},
+  juliet:       {name:'Juliet’s House', coords:[45.4410,10.9980]},
+  erbe:         {name:'Piazza delle Erbe', coords:[45.4415,10.9970]},
+  castelvecchio:{name:'Castelvecchio', coords:[45.4395,10.9885]},
+  pontePietra:  {name:'Ponte Pietra', coords:[45.4460,10.9990]},
+  wineBar:      {name:'Wine Bar', coords:[45.4405,10.9930]},
+  trattoria:    {name:'Trattoria', coords:[45.4398,10.9960]}
+};
+
+Object.values(places).forEach(p=>{
+  L.marker(p.coords).addTo(map).bindPopup(p.name);
+});
+
+const romanticRoute = [
+  places.juliet.coords,
+  places.erbe.coords,
+  places.pontePietra.coords
+];
+const historicalRoute = [
+  places.arena.coords,
+  places.castelvecchio.coords,
+  places.erbe.coords
+];
+const foodRoute = [
+  places.trattoria.coords,
+  places.wineBar.coords,
+  places.erbe.coords
+];
+
+L.polyline(romanticRoute,{color:'#ff4f81',weight:3,opacity:0.8}).addTo(map).bindPopup('Romantic Walk');
+L.polyline(historicalRoute,{color:'#ffd166',weight:3,opacity:0.8}).addTo(map).bindPopup('Historical Route');
+L.polyline(foodRoute,{color:'#06d6a0',weight:3,opacity:0.8}).addTo(map).bindPopup('Food & Wine Tour');
+
+/* REVEAL ON SCROLL */
+const revealEls = document.querySelectorAll('.reveal');
+const observer = new IntersectionObserver(entries=>{
+  entries.forEach(entry=>{
+    if(entry.isIntersecting){
+      entry.target.classList.add('visible');
+      observer.unobserve(entry.target);
+    }
+  });
+},{threshold:0.15});
+revealEls.forEach(el=>observer.observe(el));
+
+/* COOKIE BANNER */
+const cookieBanner = document.getElementById('cookie-banner');
+const cookieAccept = document.getElementById('cookie-accept');
+if(!localStorage.getItem('cookieAccepted')){
+  cookieBanner.style.display = 'flex';
+}
+cookieAccept.addEventListener('click',()=>{
+  localStorage.setItem('cookieAccepted','true');
+  cookieBanner.style.display = 'none';
+});
+
+/* SIMPLE I18N */
+const translations = {
+  hu: {
+    nav_home:"Kezdőlap",
+    nav_experiences:"Élmények",
+    nav_feel:"Érezd Veronát",
+    nav_about:"Veronáról",
+    nav_gallery:"Galéria",
+    nav_map:"Térkép",
+    nav_plan:"Utazás tervezése",
+    hero_title:"VERONA",
+    hero_subtitle:"Ahol a történetek életre kelnek",
+    hero_button:"Fedezd fel",
+    exp_title:"Fedezd fel Veronát",
+    exp_arena_title:"Aréna",
+    exp_arena_text:"Ókori római amfiteátrum, ma is működő operahelyszín.",
+    exp_juliet_title:"Júlia háza",
+    exp_juliet_text:"A szerelem és Shakespeare ikonikus helyszíne.",
+    exp_food_title:"Gasztronómia",
+    exp_food_text:"Eredeti olasz konyha és borkóstolók.",
+    exp_events_title:"Események",
+    exp_events_text:"Fesztiválok, piacok és kulturális programok egész évben.",
+    feel_title:"Érezd Veronát",
+    about_title:"Veronáról",
+    about_p1:"Verona Észak-Olaszországban található, a művészet, történelem és romantika városa.",
+    about_p2:"Az Aréna di Verona ma is lenyűgöző operaelőadásoknak ad otthont.",
+    about_p3:"Júlia háza a szerelmesek és irodalomkedvelők ikonikus célpontja.",
+    gallery_title:"Galéria",
+    gallery_all:"Mind",
+    gallery_landmarks:"Látnivalók",
+    gallery_food:"Gasztronómia",
+    map_title:"Térkép",
+    map_routes_info:"Fedezd fel Verona tematikus útvonalait: Romantic Walk, Historical Route és Food & Wine Tour.",
+    cta_title:"Tervezd meg az utazásod",
+    cta_contact_title:"Elérhetőségek",
+    cta_address_label:"Cím:",
+    cta_phone_label:"Telefon:",
+    cta_email_label:"Email:",
+    cta_hours_title:"Nyitvatartás",
+    cta_hours_1:"Hétfő – Péntek: 09:00 – 18:00",
+    cta_hours_2:"Szombat: 10:00 – 16:00",
+    cta_hours_3:"Vasárnap: Zárva",
+    cta_form_title:"Írj nekünk üzenetet",
+    cta_form_name:"Név:",
+    cta_form_email:"Email:",
+    cta_form_message:"Üzenet:",
+    cta_form_button:"Email küldése",
+    footer_official:"Verona hivatalos élményoldala",
+    footer_info_title:"Információk",
+    footer_cookies:"Sütikezelés",
+    footer_privacy:"Adatkezelés",
+    footer_downtime:"Üzemszünet",
+    footer_accessibility:"Akadálymentesítés",
+    footer_contact_title:"Kapcsolat",
+    footer_rights:"Minden jog fenntartva.",
+    cookie_text:"Ez az oldal sütiket használ a jobb felhasználói élmény érdekében.",
+    cookie_button:"Elfogadom"
+  },
+  en: {
+    nav_home:"Home",
+    nav_experiences:"Experiences",
+    nav_feel:"Feel Verona",
+    nav_about:"About",
+    nav_gallery:"Gallery",
+    nav_map:"Map",
+    nav_plan:"Plan Trip",
+    hero_title:"VERONA",
+    hero_subtitle:"Where stories come alive",
+    hero_button:"Explore",
+    exp_title:"Discover Verona",
+    exp_arena_title:"Arena",
+    exp_arena_text:"Ancient Roman amphitheatre hosting opera performances.",
+    exp_juliet_title:"Juliet’s House",
+    exp_juliet_text:"Icon of romance and Shakespearean history.",
+    exp_food_title:"Food",
+    exp_food_text:"Authentic Italian cuisine and wine experiences.",
+    exp_events_title:"Events",
+    exp_events_text:"Festivals, markets, and cultural highlights year-round.",
+    feel_title:"Feel Verona",
+    about_title:"About Verona",
+    about_p1:"Verona, located in northern Italy, is a city of art, history, and romance.",
+    about_p2:"The Arena di Verona still hosts spectacular opera performances.",
+    about_p3:"Juliet’s House is a key landmark for lovers and literature enthusiasts.",
+    gallery_title:"Gallery",
+    gallery_all:"All",
+    gallery_landmarks:"Landmarks",
+    gallery_food:"Food",
+    map_title:"Map",
+    map_routes_info:"Explore themed routes in Verona: Romantic Walk, Historical Route, and Food & Wine Tour.",
+    cta_title:"Plan Your Trip",
+    cta_contact_title:"Contact Information",
+    cta_address_label:"Address:",
+    cta_phone_label:"Phone:",
+    cta_email_label:"Email:",
+    cta_hours_title:"Opening Hours",
+    cta_hours_1:"Monday – Friday: 09:00 – 18:00",
+    cta_hours_2:"Saturday: 10:00 – 16:00",
+    cta_hours_3:"Sunday: Closed",
+    cta_form_title:"Send us a message",
+    cta_form_name:"Name:",
+    cta_form_email:"Email:",
+    cta_form_message:"Message:",
+    cta_form_button:"Send Email",
+    footer_official:"Official city experience page",
+    footer_info_title:"Information",
+    footer_cookies:"Cookie policy",
+    footer_privacy:"Privacy policy",
+    footer_downtime:"Downtime",
+    footer_accessibility:"Accessibility",
+    footer_contact_title:"Contact",
+    footer_rights:"All rights reserved.",
+    cookie_text:"This site uses cookies to improve your experience.",
+    cookie_button:"Accept"
+  },
+  it: {
+    nav_home:"Home",
+    nav_experiences:"Esperienze",
+    nav_feel:"Vivi Verona",
+    nav_about:"Su Verona",
+    nav_gallery:"Galleria",
+    nav_map:"Mappa",
+    nav_plan:"Pianifica il viaggio",
+    hero_title:"VERONA",
+    hero_subtitle:"Dove le storie prendono vita",
+    hero_button:"Esplora",
+    exp_title:"Scopri Verona",
+    exp_arena_title:"Arena",
+    exp_arena_text:"Antico anfiteatro romano che ospita opere.",
+    exp_juliet_title:"Casa di Giulietta",
+    exp_juliet_text:"Icona del romanticismo e della storia shakespeariana.",
+    exp_food_title:"Cucina",
+    exp_food_text:"Autentica cucina italiana e degustazioni di vino.",
+    exp_events_title:"Eventi",
+    exp_events_text:"Festival, mercati e cultura tutto l’anno.",
+    feel_title:"Vivi Verona",
+    about_title:"Su Verona",
+    about_p1:"Verona, nel nord Italia, è una città d’arte, storia e romanticismo.",
+    about_p2:"L’Arena di Verona ospita ancora spettacolari opere liriche.",
+    about_p3:"La Casa di Giulietta è una meta simbolica per gli innamorati.",
+    gallery_title:"Galleria",
+    gallery_all:"Tutte",
+    gallery_landmarks:"Monumenti",
+    gallery_food:"Cucina",
+    map_title:"Mappa",
+    map_routes_info:"Esplora i percorsi tematici di Verona: Romantic Walk, Historical Route e Food & Wine Tour.",
+    cta_title:"Pianifica il tuo viaggio",
+    cta_contact_title:"Informazioni di contatto",
+    cta_address_label:"Indirizzo:",
+    cta_phone_label:"Telefono:",
+    cta_email_label:"Email:",
+    cta_hours_title:"Orari di apertura",
+    cta_hours_1:"Lunedì – Venerdì: 09:00 – 18:00",
+    cta_hours_2:"Sabato: 10:00 – 16:00",
+    cta_hours_3:"Domenica: Chiuso",
+    cta_form_title:"Scrivici un messaggio",
+    cta_form_name:"Nome:",
+    cta_form_email:"Email:",
+    cta_form_message:"Messaggio:",
+    cta_form_button:"Invia email",
+    footer_official:"Pagina ufficiale delle esperienze di Verona",
+    footer_info_title:"Informazioni",
+    footer_cookies:"Gestione cookie",
+    footer_privacy:"Privacy",
+    footer_downtime:"Interruzioni",
+    footer_accessibility:"Accessibilità",
+    footer_contact_title:"Contatti",
+    footer_rights:"Tutti i diritti riservati.",
+    cookie_text:"Questo sito utilizza cookie per migliorare l’esperienza.",
+    cookie_button:"Accetta"
+  }
+};
+
+function setLanguage(lang){
+  const dict = translations[lang] || translations.en;
+  document.querySelectorAll('[data-i18n]').forEach(el=>{
+    const key = el.getAttribute('data-i18n');
+    if(dict[key]) el.textContent = dict[key];
+  });
+  document.querySelectorAll('.lang-switch button').forEach(b=>{
+    b.classList.toggle('active', b.getAttribute('data-lang')===lang);
+  });
+}
+
+document.querySelectorAll('.lang-switch button').forEach(btn=>{
+  btn.addEventListener('click',()=>setLanguage(btn.getAttribute('data-lang')));
+});
+
+setLanguage('hu');
+</script>
+
+</body>
+</html>
